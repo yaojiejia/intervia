@@ -50,7 +50,9 @@ const main = async () => {
     });
   };
 
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+//   main().catch((e) => {
+//     console.error(e);
+//     process.exit(1);
+//   });
+
+addMessageToSession(prisma, '66888f1da11be6fe6d48e68f', 'john_doe', 'this is test');
