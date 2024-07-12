@@ -1,19 +1,38 @@
 import express from 'express';
-import { createInterview } from '../lib/config/interviewConfig.js';
+import { startInterview, conversation } from '../lib/config/interviewConfig.js';
 
 const router = express.Router();
 
 
 
-router.post("/start", async (req, res) => {
-    const {id, type, difficulty, company} = req.body;
+router.post("/chat/start", async (req, res) => {
+    const {userId} = req.body;
     
-    createInterview(id, type, difficulty, company);
+    const {gptRes, sessionId} = await startInterview(userId);
     
+    res.send({gptRes,sessionId})
     
 });
 
+router.post("/chat/conversation", async (req, res) => {
+    const {sessionId, message} = req.body;
+    const gptRes = await conversation(sessionId, message)
+    res.send({gptRes, sessionId})
 
+})
+
+router.post("/chat/r1", async(req,res) =>{
+    
+}) 
 
 
 export default router;
+
+
+
+
+
+
+
+
+

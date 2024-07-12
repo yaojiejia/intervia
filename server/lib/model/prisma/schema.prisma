@@ -16,21 +16,31 @@ datasource db {
 model user{
   id          String @id @default(auto()) @map("_id") @db.ObjectId
   username    String @unique
+  session     session[]
   email       String @unique
   password    String
 }
 
 model session{
   id          String @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String
-  score       Int
+  userId      String @db.ObjectId
+  user        user   @relation(fields: [userId], references: [id]) 
   createdAt   DateTime @default(now())
-  
+  message     message[]
+}
+
+
+model message {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId       String  @db.ObjectId
+  session         session @relation(fields: [sessionId], references: [id])
+  sender          String
+  text            String
+  createdAt       DateTime @default(now())
 }
 
 model technical{
   id          String @id @default(auto()) @map("_id") @db.ObjectId
-  difficulty  String
   beginning   String
   roundOne    String
   roundTwo    String 
@@ -40,7 +50,6 @@ model technical{
 
 model behavioral{
   id          String @id @default(auto()) @map("_id") @db.ObjectId
-  difficulty  String
   beginning   String
   roundOne    String
   roundTwo    String 

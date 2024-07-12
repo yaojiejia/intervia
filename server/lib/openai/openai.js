@@ -8,16 +8,18 @@ const openai = new OpenAI({
 
 });
 
-async function main() {
-    
+async function chatGPT(input) {
     const stream = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: "Say this is a test" }],
+        messages: [{ role: "user", content: input }],
         stream: true,
     });
+    let result = ""; 
     for await (const chunk of stream) {
-        process.stdout.write(chunk.choices[0]?.delta?.content || "");
+        result += chunk.choices[0]?.delta?.content || ""; 
     }
+    console.log(result);
+    return result; 
 }
 
-main();
+export default chatGPT;
