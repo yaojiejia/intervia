@@ -17,6 +17,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Post("/auth/register", routers.Register)
 	r.Post("/auth/login", routers.Login)
+	r.Post("/auth/logout", routers.Logout)
 	fmt.Println("Server started at 3000")
 	http.ListenAndServe(":3000", r)
 }

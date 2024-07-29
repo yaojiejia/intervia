@@ -3,6 +3,7 @@ module github.com/yaojiejia/intervia/auth
 go 1.22.5
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-chi/cors v1.2.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect

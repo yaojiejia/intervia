@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/yaojiejia/intervia/interview/lib"
 )
 
 var upgrader = websocket.Upgrader{
@@ -61,7 +62,11 @@ func CreateInterview(res http.ResponseWriter, req *http.Request) {
 }
 
 func sendGPTResponse(ws *websocket.Conn, userMsg string) error {
-	gptMsg := GetGPTResponse(userMsg)
+	gptMsg, e := lib.GenerateGPTResponse(userMsg)
+
+	if e != nil {
+		log.Printf("error receiving gpt response: %v", e)
+	}
 
 	err := ws.WriteMessage(websocket.TextMessage, []byte(gptMsg))
 	if err != nil {
