@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model user{
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  username    String @unique
+  session     session[]
+  email       String @unique
+  password    String
+}
+
+model session{
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String @db.ObjectId
+  user        user   @relation(fields: [userId], references: [id]) 
+  createdAt   DateTime @default(now())
+  message     message[]
+}
+
+
+model message {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId       String  @db.ObjectId
+  session         session @relation(fields: [sessionId], references: [id])
+  sender          String
+  text            String
+  createdAt       DateTime @default(now())
+}
+
+model technical{
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  beginning   String
+  roundOne    String
+  roundTwo    String 
+  roundThree  String
+  ending      String
+}
+
+model behavioral{
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  beginning   String
+  roundOne    String
+  roundTwo    String 
+  roundThree  String
+  ending      String
+}
+
+model leetcode{
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  number      String
+  question    String
+  difficulty  String
+  company     String
+}
