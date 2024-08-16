@@ -32,6 +32,8 @@ import InterviewPage from "./components/Interview/InterviewPage";
 import FeedbackPage from "./components/Feedback/FeedbackPage";
 
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import Meeting from "./components/Interview/Meeting";
+import DictationDisplay from "./components/Interview/AIDictation";
 
 const router = createBrowserRouter([
     {
@@ -45,16 +47,6 @@ const router = createBrowserRouter([
                     .then((res) => res.text())
                     .then((res) => alert(res));
                 }}>CALL THE API</button> */}
-
-                {/* <StartInterviewButton/> */}
-
-                {/* <CustomJobDropdown/> */}
-                {/* <CustomQuestionDropdown/> */}
-
-                {/* <FeedbackInterface/> */}
-                {/* <Commend/> */}
-
-                {/* <QuestionAndAnswer/> */}
             </div>
         ),
     },
