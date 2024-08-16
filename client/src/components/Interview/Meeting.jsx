@@ -1,0 +1,326 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    Box,
+    Button,
+    IconButton,
+    TextField,
+    Typography,
+    Paper,
+    List,
+    ListItem,
+    ListItemText,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Tooltip,
+} from '@mui/material';
+import {
+    Videocam,
+    VideocamOff,
+    Mic,
+    MicOff,
+    Chat,
+    Close,
+    Send,
+    CallEnd,
+    AutoAwesome,
+    Psychology,
+} from '@mui/icons-material';
+import profile from './image/profile_1.png';
+
+export default function Meeting() {
+    const [isCameraOn, setIsCameraOn] = useState(false);
+    const [isMicOn, setIsMicOn] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isCommentBoxOpen, setIsCommentBoxOpen] = useState(false);
+    const [comment, setComment] = useState('');
+    const [comments, setComments] = useState([]);
+    const [isCallActive, setIsCallActive] = useState(true);
+    const [openHangupDialog, setOpenHangupDialog] = useState(false);
+    const [isAIDictationOn, setIsAIDictationOn] = useState(false);
+    const videoRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const analyserRef = useRef(null);
+    const micStreamRef = useRef(null);
+
+    useEffect(() => {
+        if (isCameraOn && isCallActive) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    videoRef.current.srcObject = stream;
+                })
+                .catch(err => console.error("Error accessing camera:", err));
+        } else if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+    }, [isCameraOn, isCallActive]);
+
+    useEffect(() => {
+        let animationFrameId;
+
+        const setupAudio = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                micStreamRef.current = stream;
+                
+                if (!audioContextRef.current) {
+                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                const source = audioContextRef.current.createMediaStreamSource(stream);
+                source.connect(analyserRef.current);
+                detectSound();
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+            }
+        };
+
+        const detectSound = () => {
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const checkSound = () => {
+                analyserRef.current.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+                setIsSpeaking(average > 5);
+                if (isMicOn) {
+                    animationFrameId = requestAnimationFrame(checkSound);
+                }
+            };
+
+            checkSound();
+        };
+
+        const cleanupAudio = () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            if (micStreamRef.current) {
+                micStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close();
+            }
+            setIsSpeaking(false);
+        };
+
+        if (isMicOn) {
+            setupAudio();
+        } else {
+            cleanupAudio();
+        }
+
+        return cleanupAudio;
+    }, [isMicOn]);
+
+    const toggleCamera = () => setIsCameraOn(!isCameraOn);
+    const toggleMic = () => setIsMicOn(!isMicOn);
+    const toggleCommentBox = () => setIsCommentBoxOpen(!isCommentBoxOpen);
+    const toggleAIDictation = () => setIsAIDictationOn(!isAIDictationOn);
+
+    const handleComment = (e) => {
+        e.preventDefault();
+        if (comment.trim()) {
+        setComments([...comments, comment]);
+        setComment('');
+        }
+    };
+
+    const handleHangupClick = () => {
+        setOpenHangupDialog(true);
+    };
+
+    const handleHangupConfirm = () => {
+        setIsCallActive(false);
+        setIsCameraOn(false);
+        setIsMicOn(false);
+        setIsCommentBoxOpen(false);
+        setComments([]);
+        setOpenHangupDialog(false);
+        setIsAIDictationOn(false);
+    };
+
+    const handleHangupCancel = () => {
+        setOpenHangupDialog(false);
+    };
+
+    if (!isCallActive) {
+        return (
+            <Box sx={{ 
+                height: '100vh',
+                width: '60vw', 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                textAlign: 'center',
+            }}>
+                <Typography variant="h2" color='#847137' fontWeight="bold">Call Ended</Typography>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ 
+            height: '100vh',
+            width: '60vw',
+        }}>
+            <Box sx={{ 
+                position: 'relative', 
+                width: '60vw', 
+                height: '100vh', 
+                overflow: 'hidden',
+                border: isSpeaking ? '2.5px solid #ffe591' : '2.5px solid transparent',
+                transition: 'border 0.3s ease',
+            }}>
+                <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}>
+                    {!isCameraOn && (
+                       <img src={profile} alt="Profile" style={{ height: '45vh' }}/>
+                    )}
+                </Box>
+                {isCameraOn && (
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                )}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        bottom: 16,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: 2,
+                    }}
+                >
+                    <IconButton onClick={toggleCamera} color="primary" sx={{ bgcolor: 'white' }}>
+                        {isCameraOn ? <Videocam /> : <VideocamOff />}
+                    </IconButton>
+                    <IconButton onClick={toggleMic} color="primary" sx={{ bgcolor: 'white' }}>
+                        {isMicOn ? <Mic /> : <MicOff />}
+                    </IconButton>
+                    <Tooltip title="Toggle AI Dictation">
+                        <IconButton 
+                            onClick={toggleAIDictation} 
+                            color={isAIDictationOn ? "secondary" : "primary"} 
+                            sx={{ bgcolor: 'white' }}
+                        >
+                            <AutoAwesome />
+                        </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={handleHangupClick} sx={{ bgcolor: 'red', color: 'white', '&:hover': { bgcolor: 'darkred' } }}>
+                        <CallEnd />
+                    </IconButton>
+                </Box>
+                
+                {!isCommentBoxOpen && (
+                    <IconButton
+                        onClick={toggleCommentBox}
+                        sx={{ position: 'absolute', bottom: 16, right: 16, bgcolor: 'white' }}
+                    >
+                        <Chat />
+                    </IconButton>
+                )}
+
+                {isCommentBoxOpen && (
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            position: 'absolute',
+                            right: 16,
+                            bottom: 16,
+                            width: 280,
+                            maxHeight: '60%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            borderRadius: '5px' 
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.5, borderBottom: '2px solid #EEEEEE'}}>
+                            <Typography variant="h6">Comments</Typography>
+                            <IconButton onClick={toggleCommentBox} size="small">
+                                <Close />
+                            </IconButton>
+                        </Box>
+                        <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
+                            {comments.map((c, i) => (
+                                <ListItem key={i}>
+                                <ListItemText primary={c} />
+                                </ListItem>
+                            ))}
+                        </List>
+                        <Box component="form" onSubmit={handleComment} sx={{ p: 2 }}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                placeholder="Type a comment..."
+                                InputProps={{
+                                    endAdornment: (
+                                        <IconButton type="submit">
+                                        <Send />
+                                        </IconButton>
+                                    ),
+                                }}
+                            />
+                        </Box>
+                    </Paper>
+                )}
+                {isAIDictationOn && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 16,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            bgcolor: 'rgba(0, 0, 0, 0.5)',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: 1,
+                            zIndex: 2
+                        }}
+                    >
+                        <Typography variant="body2">AI Dictation Active</Typography>
+                    </Box>
+                )}
+            </Box>
+
+            <Dialog
+                open={openHangupDialog}
+                onClose={handleHangupCancel}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {"End the call?"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to hang up and end the call?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleHangupCancel}>Cancel</Button>
+                    <Button onClick={handleHangupConfirm} autoFocus>
+                        Hang Up
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
+    );
+}
