@@ -12,7 +12,7 @@ socket.on('connect', () => {
 socket.on('interviewStarted', (data) => {
   console.log('Interview started:', data);
 });
-
+// TODO implement the reply function with speech to text in the front-end
 socket.on('disconnect', () => {
   console.log('disconnected from server');
 });
