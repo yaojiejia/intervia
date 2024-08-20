@@ -1,15 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import { getGptHistory, historyToString, getLeetCode, getTechnicalQuestion, getFirstSession, createMsg, createSession} from "../helper/dbHelper.js";
-import * as redisClient from '../lib/redis/redis.js'
+import { getGptHistory, historyToString, getLeetCode, getTechnicalQuestion, getFirstSession, createMsg, createSession } from "../helper/dbHelper.js";
+import * as redisClient from '../redis/redis.js';
 import dotenv from "dotenv";
-import chatGPT from "../openai/openai.js"
+import chatGPT from "../openai/openai.js";
 dotenv.config();
 const prisma = new PrismaClient();
-await redisClient.connect()
+await redisClient.connect();
 
+let rounds = 1;
 
-
-export const startInterview = async (userId) => {
+export const startInterview = async (userId, sessionId) => {
     const user = await prisma.user.findFirst({
         where: {
             id: userId
@@ -17,91 +17,41 @@ export const startInterview = async (userId) => {
     });
 
     if (!user) {
-        return "Error, user not found."
+        throw new Error("Error, user not found.");
     }
 
-    
+    const technicalQuestion = await getTechnicalQuestion();
+    if (!technicalQuestion) {
+        throw new Error("Error, technical question is under");
+    }
 
-    const session = await createSession(user.id);
+    let gptRes;
+    if (rounds == 1) {
+        // if (!technicalQuestion.beginning) {
+        //     throw new Error("Error, technical question beginning is null or undefined");
+        // }
+        gptRes = await chatGPT("You will be the interviewer for a job that is looking to hire software engineers. I am the interviewee. We will simulate a real-life interview. Do not include dialog names of who is saying what. Just say what an interviewer would say. Do not address me as a ChatGPT user. You can now start the interview as an interviewer. Begin with the a professional opening then stop to let the interviewee answer. Do not make it sound like this is in the middle of a conversation.");
+    } else if (rounds == 3) {
+        if (!technicalQuestion.roundOne) {
+            throw new Error("Error, technical question roundOne is null or undefined");
+        }
+        gptRes = await chatGPT(technicalQuestion.roundOne);
+    } else if (rounds == 6) {
+        if (!technicalQuestion.roundTwo) {
+            throw new Error("Error, technical question roundTwo is null or undefined");
+        }
+        gptRes = await chatGPT(technicalQuestion.roundTwo);
+    } else {
+        if (!technicalQuestion.beginning) {
+            throw new Error("Error, technical question beginning is null or undefined");
+        }
+        gptRes = await chatGPT(technicalQuestion.beginning);
+    }
 
-    const technicalQuetion = await getTechnicalQuestion();
+    await createMsg(sessionId, "gpt", gptRes);
 
-    const gptRes = await chatGPT(technicalQuetion.beginning);
-
-    await createMsg(session.id, "gpt", gptRes);
-
-    return {gptRes, sessionId: session.id};
+    rounds++;
+    return { gptRes };
 }
 
-
-export const roundOneInterview = async (sessionId, text) => {
-
-    const session = getFirstSession(sessionId);
-
-    if (!session) {
-        return "Error, session not found."
-    }
-
-    const technicalQuetion = await getTechnicalQuestion();
-    
-    const gptRes = await chatGPT(technicalQuetion.roundOne);
-    
-    await createMsg(sessionId, "user", text);
-    await createMsg(sessionId, "gpt", gptRes);
-
-    return {gptRes, sessionId: sessionId};
-    
-};
-
-export const roundTwoInterview = async (sessionId, text, difficulty, company) => {
-    const session = getFirstSession(sessionId);
-
-    if (!session) {
-        return "Error, session not found."
-    }
-
-    const leetcodeQuestion = await getLeetCode(difficulty, company);
-
-    const technicalQuetion = await getTechnicalQuestion();
-
-    const prompt = technicalQuetion.roundTwo
-
-    console.log(leetcodeQuestion.question)
-
-    const gptPrompt = prompt.replace(new RegExp('Leetcode', 'g'), 'leetcode question:' + leetcodeQuestion.number + leetcodeQuestion.question);;
-
-    console.log(gptPrompt);
-
-    const gptRes = await chatGPT(gptPrompt);
-    
-    await createMsg(sessionId, "user", text);
-    await createMsg(sessionId, "gpt", gptRes);
-
-    return {gptRes, sessionId: sessionId};
-
-
-};
-
-
-export const conversation = async (sessionId, text) => {
-    const session = getFirstSession(sessionId);
-
-    if (!session) {
-        return "Error, session not found."
-    }
-
-    const getHistory = await historyToString(sessionId);
-
-    const gptPrompt = "this is your history chat logs with the user," + getHistory + " please make a make suggestions, validation, and correction to user's latest chat as an interviewer" + text + "please make suggestions modifications, do not include any past chat histories"
-    
-    const gptRes = await chatGPT(gptPrompt);
-
-    await createMsg(sessionId, "user", text);
-    await createMsg(sessionId, "gpt", gptRes);
-
-    return {gptRes, sessionId: sessionId};
-
-};
-
 export const review = async (userId) => {};
-
