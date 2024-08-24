@@ -3,12 +3,7 @@ import {
     Box,
     Button,
     IconButton,
-    TextField,
     Typography,
-    Paper,
-    List,
-    ListItem,
-    ListItemText,
     Dialog,
     DialogActions,
     DialogContent,
@@ -26,24 +21,26 @@ import {
     Send,
     CallEnd,
     AutoAwesome,
-    Psychology,
 } from '@mui/icons-material';
 import profile from './image/profile_1.png';
+import io from 'socket.io-client';
 
 export default function Meeting() {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isMicOn, setIsMicOn] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isCommentBoxOpen, setIsCommentBoxOpen] = useState(false);
-    const [comment, setComment] = useState('');
-    const [comments, setComments] = useState([]);
     const [isCallActive, setIsCallActive] = useState(true);
     const [openHangupDialog, setOpenHangupDialog] = useState(false);
     const [isAIDictationOn, setIsAIDictationOn] = useState(false);
+    const [receivedMessages, setReceivedMessages] = useState([]);
+
     const videoRef = useRef(null);
     const audioContextRef = useRef(null);
     const analyserRef = useRef(null);
     const micStreamRef = useRef(null);
+    const recognitionRef = useRef(null);
+
+    const socket = io('http://localhost:4000');
 
     useEffect(() => {
         if (isCameraOn && isCallActive) {
@@ -116,29 +113,60 @@ export default function Meeting() {
         return cleanupAudio;
     }, [isMicOn]);
 
-    const toggleCamera = () => setIsCameraOn(!isCameraOn);
-    const toggleMic = () => setIsMicOn(!isMicOn);
-    const toggleCommentBox = () => setIsCommentBoxOpen(!isCommentBoxOpen);
-    const toggleAIDictation = () => setIsAIDictationOn(!isAIDictationOn);
+    useEffect(() => {
+        if (isAIDictationOn && isMicOn) {
+            startDictation();
+        } else {
+            stopDictation();
+        }
+    }, [isAIDictationOn, isMicOn]);
 
-    const handleComment = (e) => {
-        e.preventDefault();
-        if (comment.trim()) {
-        setComments([...comments, comment]);
-        setComment('');
+    const startDictation = () => {
+        if ('webkitSpeechRecognition' in window) {
+            recognitionRef.current = new window.webkitSpeechRecognition();
+            recognitionRef.current.continuous = true;
+            recognitionRef.current.interimResults = true;
+
+            recognitionRef.current.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        const transcript = event.results[i][0].transcript;
+                        console.log(transcript);
+                        socket.emit('startInterview', transcript);
+                        socket.on('systemMsg', handleServerMessage);
+                    }
+                }
+            };
+
+            recognitionRef.current.start();
+        } else {
+            console.error('Speech recognition not supported');
         }
     };
 
+    const stopDictation = () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+        }
+    };
+
+    const toggleCamera = () => setIsCameraOn(!isCameraOn);
+    const toggleMic = () => setIsMicOn(!isMicOn);
+    const toggleAIDictation = () => setIsAIDictationOn(!isAIDictationOn);
+
     const handleHangupClick = () => {
         setOpenHangupDialog(true);
+    };
+
+    const handleServerMessage = (message) => {
+        console.log(`Handle Server ${message}`);
+        setReceivedMessages(prevMessages => [...prevMessages, message]);
     };
 
     const handleHangupConfirm = () => {
         setIsCallActive(false);
         setIsCameraOn(false);
         setIsMicOn(false);
-        setIsCommentBoxOpen(false);
-        setComments([]);
         setOpenHangupDialog(false);
         setIsAIDictationOn(false);
     };
@@ -226,61 +254,6 @@ export default function Meeting() {
                     </IconButton>
                 </Box>
                 
-                {!isCommentBoxOpen && (
-                    <IconButton
-                        onClick={toggleCommentBox}
-                        sx={{ position: 'absolute', bottom: 16, right: 16, bgcolor: 'white' }}
-                    >
-                        <Chat />
-                    </IconButton>
-                )}
-
-                {isCommentBoxOpen && (
-                    <Paper
-                        elevation={3}
-                        sx={{
-                            position: 'absolute',
-                            right: 16,
-                            bottom: 16,
-                            width: 280,
-                            maxHeight: '60%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            borderRadius: '5px' 
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.5, borderBottom: '2px solid #EEEEEE'}}>
-                            <Typography variant="h6">Comments</Typography>
-                            <IconButton onClick={toggleCommentBox} size="small">
-                                <Close />
-                            </IconButton>
-                        </Box>
-                        <List sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
-                            {comments.map((c, i) => (
-                                <ListItem key={i}>
-                                <ListItemText primary={c} />
-                                </ListItem>
-                            ))}
-                        </List>
-                        <Box component="form" onSubmit={handleComment} sx={{ p: 2 }}>
-                            <TextField
-                                fullWidth
-                                variant="outlined"
-                                size="small"
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                placeholder="Type a comment..."
-                                InputProps={{
-                                    endAdornment: (
-                                        <IconButton type="submit">
-                                        <Send />
-                                        </IconButton>
-                                    ),
-                                }}
-                            />
-                        </Box>
-                    </Paper>
-                )}
                 {isAIDictationOn && (
                     <Box
                         sx={{
