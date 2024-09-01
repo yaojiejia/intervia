@@ -193,8 +193,9 @@ const ChatComponent = () => {
                             backgroundColor: '#4a4332',
                         },
                     }}
+                    onClick={()=>{socket.emit('startInterview', inputValue)}}
                 >
-                    <Send />
+                    <Send/>
                 </Button>
             </Box>
         </Box>
