@@ -1,0 +1,8 @@
+const technicalQuestion = ['You will be the interviewer for a job that is looking to hire software engineers. I am the interviewee. We will simulate a real-life interview. Do not include dialog names of who is saying what. Just say what an interviewer would say. Do not address me as a ChatGPT user. You can now start the interview as an interviewer. Begin with the a professional opening then stop to let the interviewee answer. Do not make it sound like this is in the middle of a conversation.',
+     'Imagine that the interviewee has already answered the question you just ask. Say thank you or something similar. Then, ask me: "describe what is binary search tree and how to use it". Then, stop to let the interviewee answer.',
+     'You will be the interviewer for a job that is looking to hire software engineers. This is the technical interview round and you need to ask me Leetcode. Say something like "lets move on to the technical part of the interview" and then give me the description of the problem. But do not tell me the number or the name of that Leetcode.',
+     'Imagine that the interviewee has already answered the question you just ask. Say: "Thank you!". Then, ask me Leetcode problem number 2. Ask me the description of the problem. But do not tell me the number or the name of that Leetcode problem.',
+     'Imagine that the interviewee has already answered the question you just ask. Say: "Thank you!". Then, conclude the interview in a formal and professional way.'
+];
+
+export default technicalQuestion;

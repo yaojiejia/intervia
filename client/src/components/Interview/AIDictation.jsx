@@ -87,7 +87,7 @@ const ChatComponent = () => {
                                 primary={
                                     <Typography component="span" sx={{ color: '#C8AD9C' }}>
                                         <Typography component="span" fontWeight="bold">System: </Typography>
-                                        "{response}" given by socket {socketId}
+                                        "{response}" 
                                     </Typography>
                                 }
                             />

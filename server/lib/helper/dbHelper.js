@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import * as redisClient from '../lib/redis/redis.js'
+import * as redisClient from '../redis/redis.js'
 dotenv.config();
 const prisma = new PrismaClient();
 await redisClient.connect()
@@ -59,7 +59,7 @@ export const getTechnicalQuestion = async () => {
         }
         else{
             let technicalQuestion = await prisma.technical.findFirst();
-            await redisClient.set('technicalQuestion', technicalQuestion)
+            await redisClient.set('technicalQuestion', JSON.stringify(technicalQuestion))
             return technicalQuestion;
         }
     }   
@@ -69,11 +69,11 @@ export const getTechnicalQuestion = async () => {
     }
 };  
 
-export const getFirstSession = async (sessionId) => {
+export const getFirstSession = async (userId) => {
     try{
     const session = await prisma.session.findFirst({
         where: {
-            id: sessionId
+            userId: userId
         }
     });
     return session;
