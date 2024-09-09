@@ -33,6 +33,7 @@ const ChatComponent = () => {
     }, [messages]);
 
     useEffect(() => {
+        socket.emit('startInterview', inputValue);
         socket.on('startInterview', (msg)=>{
             setInputValue(msg.msg);
             setSocketId(msg.socket);
@@ -87,7 +88,7 @@ const ChatComponent = () => {
                                 primary={
                                     <Typography component="span" sx={{ color: '#C8AD9C' }}>
                                         <Typography component="span" fontWeight="bold">System: </Typography>
-                                        "{response}" 
+                                        "{response}" given by socket {socketId}
                                     </Typography>
                                 }
                             />
@@ -193,7 +194,7 @@ const ChatComponent = () => {
                             backgroundColor: '#4a4332',
                         },
                     }}
-                    onClick={()=>{socket.emit('startInterview', inputValue)}}
+                    // onClick={()=>{socket.emit('startInterview', inputValue)}}
                 >
                     <Send/>
                 </Button>
