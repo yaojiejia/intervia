@@ -5,4 +5,5 @@ const technicalQuestion = ['You will be the interviewer for a job that is lookin
      'Imagine that the interviewee has already answered the question you just ask. Say: "Thank you!". Then, conclude the interview in a formal and professional way.'
 ];
 
-export default technicalQuestion;
+const instruction = '"I will provide the chat log between the user and the chatbot, make neccesary reply after the latest input from the user, also your role is the interviewr so you have to be critic and not agree on everything the user said, do not give off any hints or answer, just listen to the user and make some neccesary comments: '
+export {technicalQuestion, instruction};

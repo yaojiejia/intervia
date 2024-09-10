@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { getGptHistory, historyToString, getLeetCode, getTechnicalQuestion, getFirstSession, createMsg, createSession } from "../helper/dbHelper.js";
-import technicalQuestion from "../script/technicalQuestion.js";
+import {technicalQuestion, instruction} from "../script/technicalQuestion.js";
 import * as redisClient from '../redis/redis.js';
 import dotenv from "dotenv";
 import chatGPT from "../openai/openai.js";
@@ -66,8 +66,7 @@ export const startInterview = async (msg, sessionId) => {
     1: technicalQuestion[0],
     3: technicalQuestion[1],
     6: technicalQuestion[2],
-    default: "I will provide the chat log between the user and the chatbot, make neccesary reply after the latest input from the user: "
-    + history
+    default: instruction + history
   };
 
   const question = roundQuestions[rounds] || roundQuestions.default;
