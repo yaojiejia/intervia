@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Typography, Box } from '@mui/material';
 
 import QuestionAndAnswer from './QAndA';
@@ -9,6 +9,11 @@ import profile from './image/profile_1.png';
 import faviconImage from './image/favicon.png';
 
 const InterviewPage = () => {
+    const [clientMsg, setClientMsg] = useState('');
+    const updateClientMsg = (newMsg) => {
+        setClientMsg(newMsg);
+    };
+
     return (
         <Box
             height="100vh"
@@ -19,12 +24,12 @@ const InterviewPage = () => {
                 background: 'linear-gradient(135deg, #383121 0%, #383121 40%, #000000 100%)',
             }}
         >
-            <Meeting/>
+            <Meeting clientMsg={clientMsg} updateClientMsg={updateClientMsg} />
             <Box sx={{display: 'flex', flexDirection: 'column', borderLeft: '3px solid #685A4A'}}>
                 <Box sx={{ height: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <img src={faviconImage} alt="Favicon" style={{ height: '25vh' }}/>
                 </Box>
-                <ChatComponent/>
+                <ChatComponent clientMsg={clientMsg} />
             </Box>
         </Box>
     );

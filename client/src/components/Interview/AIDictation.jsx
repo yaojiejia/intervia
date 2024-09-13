@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:4000');
 
-const ChatComponent = () => {
+const ChatComponent = ({ clientMsg }) => {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [socketId, setSocketId] = useState('');
@@ -20,22 +20,21 @@ const ChatComponent = () => {
         }
     }
 
-    const scrollBottomToTop = () => {
-        if (bottomContainerRef.current) {
-            bottomContainerRef.current.scrollTop = topContainerRef.current.scrollHeight;
-        }
+    // const scrollBottomToTop = () => {
+    //     if (bottomContainerRef.current) {
+    //         bottomContainerRef.current.scrollTop = topContainerRef.current.scrollHeight;
+    //     }
 
-    }
+    // }
 
     useEffect(() => {
         scrollTopToBottom();
-        scrollBottomToTop();
+        // scrollBottomToTop();
     }, [messages]);
 
     useEffect(() => {
-        socket.emit('startInterview', inputValue);
         socket.on('startInterview', (msg)=>{
-            setInputValue(msg.msg);
+            // setInputValue(msg.msg);
             setSocketId(msg.socket);
             setResponse(msg.response);
         });
@@ -45,11 +44,21 @@ const ChatComponent = () => {
         };
     }, []);
 
-    const handleSubmit = useCallback((e) => {
-        e.preventDefault();
-        if (inputValue) {
-            const newMessage = inputValue
-            setMessages(prev => [...prev, newMessage]);
+    useEffect(() => {
+        if (clientMsg) {
+            setInputValue(clientMsg);
+        }
+    }, [clientMsg]);
+
+    const handleSubmit = useCallback((e, value = null) => {
+        if (e) {
+            e.preventDefault();
+        }
+
+        const messageToSend = value || inputValue;
+        if (messageToSend) {
+            setMessages(prev => [...prev, { type: 'user', content: messageToSend }]);
+            socket.emit('startInterview', messageToSend);
             setInputValue('');
         }
     }, [inputValue]);
@@ -60,55 +69,10 @@ const ChatComponent = () => {
                 elevation={3} 
                 sx={{ 
                     pl: 2, 
-                    pr: 2,
-                    pb: 1.5,
-                    pt: 1.5,
-                    height: 'calc((100% - 60px)/2)', 
-                    display: 'flex',
-                    overflowY: 'auto',
-                    width: '100%',
-                    flexDirection: 'column',
-                    '&::-webkit-scrollbar': {
-                        width: '0.4em'
-                    },
-                    '&::-webkit-scrollbar-track': {
-                        boxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)',
-                        webkitBoxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)'
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: 'rgba(0,0,0,.1)',
-                        outline: '1px solid slategrey'
-                    }
-                }}
-            >
-                <List ref={topContainerRef} sx={{ overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                    {messages.map((message, index) => (
-                        <ListItem key={index} disablePadding>
-                            <ListItemText
-                                primary={
-                                    <Typography component="span" sx={{ color: '#C8AD9C' }}>
-                                        <Typography component="span" fontWeight="bold">System: </Typography>
-                                        "{response}" given by socket {socketId}
-                                    </Typography>
-                                }
-                            />
-                        </ListItem>
-                    ))}
-                </List>
-            </Box>
-            <Divider sx={{
-                width: '80%',
-                borderColor: 'rgba(104, 90, 74, 0.5)',
-                borderStyle: 'dashed',
-                borderWidth: '2px 0 0',
-            }} />
-            <Box 
-                elevation={3} 
-                sx={{ 
-                    pl: 2, 
                     pt: 1.5,
                     pb: 1,
-                    height: 'calc((100% - 60px)/2)',
+                    // height: 'calc((100% - 60px)/2)',
+                    height: 'calc(100% - 60px)',
                     width: '100%',
                     overflowY: 'auto',
                     display: 'flex',
@@ -132,8 +96,14 @@ const ChatComponent = () => {
                             <ListItemText
                                 primary={
                                     <Typography component="span" sx={{ color: '#C8AD9C' }}>
-                                        <Typography component="span" fontWeight="bold">User: </Typography>
-                                        {message}
+                                        <div>
+                                            <Typography component="span" fontWeight="bold">User: </Typography>
+                                            {message.content}
+                                        </div>
+                                        <div>
+                                            <Typography component="span" fontWeight="bold">System: </Typography>
+                                            "{response}" given by socket {socketId}
+                                        </div>
                                     </Typography>
                                 }
                             />

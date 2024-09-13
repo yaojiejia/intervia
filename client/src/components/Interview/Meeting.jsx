@@ -23,9 +23,9 @@ import {
     AutoAwesome,
 } from '@mui/icons-material';
 import profile from './image/profile_1.png';
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
 
-export default function Meeting() {
+export default function Meeting({ updateClientMsg }) {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [isMicOn, setIsMicOn] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -40,7 +40,7 @@ export default function Meeting() {
     const micStreamRef = useRef(null);
     const recognitionRef = useRef(null);
 
-    const socket = io('http://localhost:4000');
+    // const socket = io('http://localhost:4000');
 
     useEffect(() => {
         if (isCameraOn && isCallActive) {
@@ -59,15 +59,16 @@ export default function Meeting() {
 
         const setupAudio = async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                micStreamRef.current = stream;
-                
                 if (!audioContextRef.current) {
                     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
                 }
                 
+                if (!micStreamRef.current) {
+                    micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+                }
+                
                 analyserRef.current = audioContextRef.current.createAnalyser();
-                const source = audioContextRef.current.createMediaStreamSource(stream);
+                const source = audioContextRef.current.createMediaStreamSource(micStreamRef.current);
                 source.connect(analyserRef.current);
                 detectSound();
             } catch (err) {
@@ -95,12 +96,6 @@ export default function Meeting() {
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
-            if (micStreamRef.current) {
-                micStreamRef.current.getTracks().forEach(track => track.stop());
-            }
-            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                audioContextRef.current.close();
-            }
             setIsSpeaking(false);
         };
 
@@ -127,16 +122,38 @@ export default function Meeting() {
             recognitionRef.current.continuous = true;
             recognitionRef.current.interimResults = true;
 
-            recognitionRef.current.onresult = (event) => {
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        const transcript = event.results[i][0].transcript;
-                        console.log(transcript);
-                        socket.emit('startInterview', transcript);
-                        socket.on('systemMsg', handleServerMessage);
-                    }
+            // recognitionRef.current.onresult = (event) => {
+            //     for (let i = event.resultIndex; i < event.results.length; ++i) {
+            //         if (event.results[i].isFinal) {
+            //             const transcript = event.results[i][0].transcript;
+            //             console.log(transcript);
+            //             updateClientMsg(transcript);
+            //         }
+            //     }
+            // };
+            // recognitionRef.current.onend = () => {
+            //     // Do nothing when recognition ends naturally
+            //     console.log('Speech recognition ended');
+            // };
+        let finalTranscript = '';
+
+        recognitionRef.current.onresult = (event) => {
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interimTranscript += transcript;
                 }
-            };
+            }
+
+            // Log and update with both final and interim results
+            console.log('Final Transcript:', finalTranscript);
+            console.log('Interim Transcript:', interimTranscript);
+            updateClientMsg(finalTranscript + interimTranscript);
+        };
 
             recognitionRef.current.start();
         } else {
