@@ -17,7 +17,7 @@ npm install
 ```
 Run the server for demo
 ```
-node app.js
+node startInterview.js
 ```
 Run server locally, it will run at http://localhost:4000
 
